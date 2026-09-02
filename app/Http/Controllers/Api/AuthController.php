@@ -19,19 +19,19 @@ class AuthController extends Controller
         ]);
 
         $user = User::query()
-            ->with(['currentTenant', 'employee.role.permissions', 'tenants'])
+            ->with(['escolaAtual', 'funcionario.perfil.permissoes', 'escolas'])
             ->where('email', $credentials['email'])
             ->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are invalid.'],
+                'email' => ['As credenciais informadas são inválidas.'],
             ]);
         }
 
         if (! $user->isActive()) {
             throw ValidationException::withMessages([
-                'email' => ['This user is inactive.'],
+                'email' => ['Este usuário está inativo.'],
             ]);
         }
 
@@ -48,7 +48,7 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->load(['currentTenant', 'employee.role.permissions', 'tenants']);
+        $user = $request->user()->load(['escolaAtual', 'funcionario.perfil.permissoes', 'escolas']);
 
         return response()->json([
             'data' => $this->userPayload($user),
@@ -60,36 +60,36 @@ class AuthController extends Controller
         $request->user()?->currentAccessToken()?->delete();
 
         return response()->json([
-            'message' => 'Logged out successfully.',
+            'message' => 'Sessão encerrada com sucesso.',
         ]);
     }
 
     private function userPayload(User $user): array
     {
-        $role = $user->employee?->role;
+        $perfil = $user->funcionario?->perfil;
 
         return [
             'id' => $user->id,
-            'name' => $user->name,
+            'nome' => $user->name,
             'email' => $user->email,
-            'type' => $user->type,
+            'tipo' => $user->type,
             'status' => $user->status,
-            'current_tenant' => $user->currentTenant ? [
-                'id' => $user->currentTenant->id,
-                'name' => $user->currentTenant->name,
-                'slug' => $user->currentTenant->slug,
-                'status' => $user->currentTenant->status,
+            'escola_atual' => $user->escolaAtual ? [
+                'id' => $user->escolaAtual->id,
+                'nome' => $user->escolaAtual->nome,
+                'slug' => $user->escolaAtual->slug,
+                'status' => $user->escolaAtual->status,
             ] : null,
-            'tenants' => $user->tenants->map(fn ($tenant) => [
-                'id' => $tenant->id,
-                'name' => $tenant->name,
-                'slug' => $tenant->slug,
-                'is_owner' => (bool) $tenant->pivot->is_owner,
+            'escolas' => $user->escolas->map(fn ($escola) => [
+                'id' => $escola->id,
+                'nome' => $escola->nome,
+                'slug' => $escola->slug,
+                'proprietario' => (bool) $escola->pivot->proprietario,
             ])->values(),
-            'role' => $role ? [
-                'key' => $role->key,
-                'name' => $role->name,
-                'permissions' => $role->permissions->pluck('key')->values(),
+            'perfil' => $perfil ? [
+                'chave' => $perfil->chave,
+                'nome' => $perfil->nome,
+                'permissoes' => $perfil->permissoes->pluck('chave')->values(),
             ] : null,
         ];
     }

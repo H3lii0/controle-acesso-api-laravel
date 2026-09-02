@@ -8,17 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tenant_user', function (Blueprint $table) {
-            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+        Schema::create('escola_user', function (Blueprint $table) {
+            $table->foreignId('escola_id')->constrained('escolas')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->boolean('is_owner')->default(false);
+            $table->boolean('proprietario')->default(false);
             $table->timestamps();
-            $table->primary(['tenant_id', 'user_id']);
+
+            $table->primary(['escola_id', 'user_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('tenant_user');
+        Schema::dropIfExists('escola_user');
     }
 };

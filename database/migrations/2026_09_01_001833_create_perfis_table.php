@@ -8,18 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        Schema::create('perfis', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->boolean('is_system')->default(true);
+            $table->string('chave')->unique();
+            $table->string('nome');
+            $table->text('descricao')->nullable();
+            $table->boolean('sistema')->default(true);
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('perfis');
     }
 };

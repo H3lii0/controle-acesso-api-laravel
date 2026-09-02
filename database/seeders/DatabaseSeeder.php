@@ -12,12 +12,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            SystemPermissionsSeeder::class,
-            SystemRolesSeeder::class,
+            PermissoesSistemaSeeder::class,
+            PerfisSistemaSeeder::class,
         ]);
 
         if ($this->command?->getLaravel()->environment(['local', 'testing'])) {
-            $this->call(DevelopmentTenantSeeder::class);
+            $this->call(DesenvolvimentoEscolaSeeder::class);
         }
     }
 }

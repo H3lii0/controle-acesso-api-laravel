@@ -8,25 +8,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['key', 'name', 'description', 'is_system'])]
-class Role extends Model
+#[Fillable(['chave', 'nome', 'descricao', 'sistema'])]
+class Perfil extends Model
 {
     use HasFactory;
 
-    public function employees(): HasMany
+    protected $table = 'perfis';
+
+    public function funcionarios(): HasMany
     {
-        return $this->hasMany(Employee::class);
+        return $this->hasMany(Funcionario::class);
     }
 
-    public function permissions(): BelongsToMany
+    public function permissoes(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class);
+        return $this->belongsToMany(Permissao::class, 'perfil_permissao');
     }
 
     protected function casts(): array
     {
         return [
-            'is_system' => 'boolean',
+            'sistema' => 'boolean',
         ];
     }
 }

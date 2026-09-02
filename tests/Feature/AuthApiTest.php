@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Employee;
-use App\Models\Permission;
-use App\Models\Role;
-use App\Models\Tenant;
+use App\Models\Escola;
+use App\Models\Funcionario;
+use App\Models\Perfil;
+use App\Models\Permissao;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -17,41 +17,41 @@ class AuthApiTest extends TestCase
 
     public function test_user_can_login_and_read_profile(): void
     {
-        $permission = Permission::query()->create([
-            'key' => 'view_dashboard',
-            'name' => 'View dashboard',
+        $permissao = Permissao::query()->create([
+            'chave' => 'ver_painel',
+            'nome' => 'Ver painel',
         ]);
 
-        $role = Role::query()->create([
-            'key' => 'admin',
-            'name' => 'Administrador',
+        $perfil = Perfil::query()->create([
+            'chave' => 'administrador',
+            'nome' => 'Administrador',
         ]);
 
-        $role->permissions()->attach($permission);
+        $perfil->permissoes()->attach($permissao);
 
-        $tenant = Tenant::query()->create([
-            'name' => 'Example School',
-            'slug' => 'example-school',
-            'status' => 'active',
+        $escola = Escola::query()->create([
+            'nome' => 'Escola Modelo',
+            'slug' => 'escola-modelo',
+            'status' => 'ativo',
         ]);
 
         $user = User::query()->create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => Hash::make('password'),
-            'type' => 'employee',
-            'status' => 'active',
-            'current_tenant_id' => $tenant->id,
+            'type' => 'funcionario',
+            'status' => 'ativo',
+            'escola_atual_id' => $escola->id,
         ]);
 
-        $user->tenants()->attach($tenant, ['is_owner' => true]);
+        $user->escolas()->attach($escola, ['proprietario' => true]);
 
-        Employee::query()->create([
-            'tenant_id' => $tenant->id,
+        Funcionario::query()->create([
+            'escola_id' => $escola->id,
             'user_id' => $user->id,
-            'role_id' => $role->id,
-            'position' => 'Administrator',
-            'status' => 'active',
+            'perfil_id' => $perfil->id,
+            'cargo' => 'Administrador',
+            'status' => 'ativo',
         ]);
 
         $login = $this->postJson('/api/auth/login', [
@@ -61,10 +61,12 @@ class AuthApiTest extends TestCase
 
         $login->assertOk()
             ->assertJsonPath('data.user.email', 'admin@example.com')
-            ->assertJsonPath('data.user.current_tenant.slug', 'example-school')
-            ->assertJsonPath('data.user.tenants.0.slug', 'example-school')
-            ->assertJsonPath('data.user.role.key', 'admin')
-            ->assertJsonPath('data.user.role.permissions.0', 'view_dashboard')
+            ->assertJsonPath('data.user.nome', 'Admin User')
+            ->assertJsonPath('data.user.tipo', 'funcionario')
+            ->assertJsonPath('data.user.escola_atual.slug', 'escola-modelo')
+            ->assertJsonPath('data.user.escolas.0.slug', 'escola-modelo')
+            ->assertJsonPath('data.user.perfil.chave', 'administrador')
+            ->assertJsonPath('data.user.perfil.permissoes.0', 'ver_painel')
             ->assertJsonStructure([
                 'data' => ['token', 'token_type', 'user'],
             ]);
@@ -83,8 +85,8 @@ class AuthApiTest extends TestCase
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => Hash::make('password'),
-            'type' => 'employee',
-            'status' => 'active',
+            'type' => 'funcionario',
+            'status' => 'ativo',
         ]);
 
         $this->postJson('/api/auth/login', [

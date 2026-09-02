@@ -13,33 +13,33 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'type', 'status', 'current_tenant_id'])]
+#[Fillable(['name', 'email', 'password', 'type', 'status', 'escola_atual_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    public function employee(): HasOne
+    public function funcionario(): HasOne
     {
-        return $this->hasOne(Employee::class);
+        return $this->hasOne(Funcionario::class);
     }
 
-    public function currentTenant(): BelongsTo
+    public function escolaAtual(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class, 'current_tenant_id');
+        return $this->belongsTo(Escola::class, 'escola_atual_id');
     }
 
-    public function tenants(): BelongsToMany
+    public function escolas(): BelongsToMany
     {
-        return $this->belongsToMany(Tenant::class)
-            ->withPivot(['is_owner'])
+        return $this->belongsToMany(Escola::class, 'escola_user')
+            ->withPivot(['proprietario'])
             ->withTimestamps();
     }
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === 'ativo';
     }
 
     /**

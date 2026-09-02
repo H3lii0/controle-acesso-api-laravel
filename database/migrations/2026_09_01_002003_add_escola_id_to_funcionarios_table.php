@@ -8,19 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('employees', function (Blueprint $table) {
-            $table->foreignId('tenant_id')
+        Schema::table('funcionarios', function (Blueprint $table) {
+            $table->foreignId('escola_id')
                 ->nullable()
                 ->after('id')
-                ->constrained()
-                ->nullOnDelete();
+                ->constrained('escolas')
+                ->cascadeOnDelete();
         });
     }
 
     public function down(): void
     {
-        Schema::table('employees', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('tenant_id');
+        Schema::table('funcionarios', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('escola_id');
         });
     }
 };

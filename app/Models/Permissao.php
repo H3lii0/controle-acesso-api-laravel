@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['key', 'name', 'description'])]
-class Permission extends Model
+#[Fillable(['chave', 'nome', 'descricao'])]
+class Permissao extends Model
 {
     use HasFactory;
 
-    public function roles(): BelongsToMany
+    protected $table = 'permissoes';
+
+    public function perfis(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class);
+        return $this->belongsToMany(Perfil::class, 'perfil_permissao');
     }
 }

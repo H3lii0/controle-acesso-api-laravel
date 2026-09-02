@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('type')->default('employee')->index();
-            $table->string('status')->default('active')->index();
+            $table->string('type')->default('funcionario')->index();
+            $table->string('status')->default('ativo')->index();
         });
     }
 
