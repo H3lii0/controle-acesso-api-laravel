@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Actions\IssueAccountActivation;
 use App\Enums\AccountStatus;
 use App\Enums\AccountType;
 use App\Http\Controllers\Controller;
@@ -12,15 +13,15 @@ use App\Http\Requests\Admin\UpdateEmployeeStatusRequest;
 use App\Http\Resources\EmployeeResource;
 use App\Models\Permission;
 use App\Models\User;
-use App\Notifications\AccountActivationNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class EmployeeController extends Controller
 {
+    public function __construct(private readonly IssueAccountActivation $issueAccountActivation) {}
+
     public function index(IndexEmployeeRequest $request): AnonymousResourceCollection
     {
         $query = User::query()
@@ -52,7 +53,7 @@ class EmployeeController extends Controller
 
     public function show(User $employee): EmployeeResource|JsonResponse
     {
-        if (!$this->isEmployee($employee)) {
+        if (! $this->isEmployee($employee)) {
             return $this->employeeNotFoundResponse();
         }
 
@@ -79,7 +80,7 @@ class EmployeeController extends Controller
             return $employee;
         });
 
-        $this->sendActivationInvitation($employee);
+        $this->issueAccountActivation->handle($employee);
 
         return response()->json([
             'message' => 'Funcionário cadastrado. O convite de ativação foi enviado.',
@@ -114,7 +115,7 @@ class EmployeeController extends Controller
         });
 
         if ($emailChanged) {
-            $this->sendActivationInvitation($employee);
+            $this->issueAccountActivation->handle($employee);
         }
 
         return (new EmployeeResource($employee->load('permissions')))
@@ -174,7 +175,7 @@ class EmployeeController extends Controller
             ], 409);
         }
 
-        $this->sendActivationInvitation($employee);
+        $this->issueAccountActivation->handle($employee);
 
         return response()->json([
             'message' => 'Um novo convite de ativação foi enviado.',
@@ -191,25 +192,6 @@ class EmployeeController extends Controller
             ->pluck('id');
 
         $employee->permissions()->sync($permissionIds);
-    }
-
-    private function sendActivationInvitation(User $employee): void
-    {
-        $plainToken = Str::random(64);
-        $expiresAt = now()->addHours(
-            max(1, (int) config('auth.activation.expiration_hours', 24)),
-        );
-
-        $employee->activationToken()->updateOrCreate(
-            [],
-            [
-                'token_hash' => hash('sha256', $plainToken),
-                'expires_at' => $expiresAt,
-                'created_at' => now(),
-            ],
-        );
-
-        $employee->notify(new AccountActivationNotification($plainToken, $expiresAt));
     }
 
     private function isEmployee(User $user): bool
