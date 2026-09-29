@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AccountActivationController;
 use App\Http\Controllers\Api\Admin\EmployeeController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PasswordResetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json([
@@ -15,6 +16,8 @@ Route::get('/health', fn () => response()->json([
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/activate', [AccountActivationController::class, 'store']);
+Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendLink']);
+Route::post('/auth/reset-password', [PasswordResetController::class, 'reset']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
