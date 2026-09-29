@@ -20,16 +20,9 @@ API backend do sistema de controle de acesso biometrico escolar.
 - PHP
 - Laravel Sanctum
 
-## Multi-tenant
+## Escopo atual
 
-A API ja nasce preparada para multi-tenant em nivel inicial:
-
-- `tenants`: clientes/escolas do sistema;
-- `tenant_user`: vinculo entre usuario e tenant;
-- `users.current_tenant_id`: tenant ativo do usuario;
-- `employees.tenant_id`: funcionario vinculado a um tenant.
-
-Os seeders de sistema criam apenas permissoes e perfis genericos. Dados de desenvolvimento ficam separados no `DevelopmentTenantSeeder`.
+O MVP atende uma unica escola. Contas de funcionarios recebem permissoes individuais e contas de responsaveis acessam somente os alunos vinculados. Nao existe estrutura multi-tenant nesta versao.
 
 ## Setup local
 
@@ -82,7 +75,6 @@ POST /api/auth/logout
 Usuario seed para desenvolvimento:
 
 ```txt
-Tenant: Example School
 E-mail: admin@example.test
 Senha:  password
 ```
@@ -90,3 +82,4 @@ Senha:  password
 ## Documentacao
 
 A especificacao funcional e tecnica fica no repositorio `controle-acesso-docs`.
+

@@ -13,7 +13,7 @@ class HealthApiTest extends TestCase
             ->assertExactJson([
                 'data' => [
                     'status' => 'ok',
-                    'service' => 'controle-acesso-api-laravel',
+                    'service' => 'school-access-control-api-laravel',
                 ],
             ]);
     }
