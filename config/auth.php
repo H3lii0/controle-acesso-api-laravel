@@ -114,4 +114,13 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'login_lockout' => [
+        'maximum_attempts' => (int) env('AUTH_LOGIN_MAXIMUM_ATTEMPTS', 5),
+        'seconds' => (int) env('AUTH_LOGIN_LOCKOUT_SECONDS', 300),
+    ],
+
+    'activation' => [
+        'expiration_hours' => (int) env('AUTH_ACTIVATION_EXPIRATION_HOURS', 24),
+    ],
+
 ];
