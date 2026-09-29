@@ -183,4 +183,14 @@ class AuthApiTest extends TestCase
             ->getJson('/api/auth/me')
             ->assertUnauthorized();
     }
+
+    public function test_authenticated_disabled_user_cannot_read_the_authenticated_profile(): void
+    {
+        $user = User::factory()->disabled()->create();
+
+        $this->actingAs($user)
+            ->getJson('/api/auth/me')
+            ->assertForbidden()
+            ->assertJsonPath('code', 'account_disabled');
+    }
 }

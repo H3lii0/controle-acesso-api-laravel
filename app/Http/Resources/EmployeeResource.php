@@ -19,6 +19,8 @@ class EmployeeResource extends JsonResource
             'phone' => $this->phone,
             'account_type' => $this->account_type->value,
             'account_status' => $this->account_status->value,
+            'email_verified_at' => $this->email_verified_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
             'permissions' => PermissionResource::collection($this->whenLoaded('permissions')),
         ];
     }
