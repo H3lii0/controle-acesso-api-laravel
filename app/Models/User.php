@@ -2,54 +2,80 @@
 
 namespace App\Models;
 
+use App\Enums\AccountStatus;
+use App\Enums\AccountType;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
-#[Fillable(['name', 'email', 'password', 'type', 'status', 'escola_atual_id'])]
+#[Fillable([
+    'full_name',
+    'email',
+    'phone',
+    'password',
+    'account_type',
+    'account_status',
+    'email_verified_at',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
-    public function funcionario(): HasOne
+    public function activationToken(): HasOne
     {
-        return $this->hasOne(Funcionario::class);
+        return $this->hasOne(AccountActivationToken::class);
     }
 
-    public function escolaAtual(): BelongsTo
+    public function permissions(): BelongsToMany
     {
-        return $this->belongsTo(Escola::class, 'escola_atual_id');
+        return $this->belongsToMany(Permission::class, 'user_permission');
     }
 
-    public function escolas(): BelongsToMany
+    public function guardedStudents(): HasMany
     {
-        return $this->belongsToMany(Escola::class, 'escola_user')
-            ->withPivot(['proprietario'])
-            ->withTimestamps();
+        return $this->hasMany(Student::class, 'guardian_user_id');
     }
 
     public function isActive(): bool
     {
-        return $this->status === 'ativo';
+        return $this->account_status === AccountStatus::Active;
+    }
+
+    public function isCentralAdministrator(): bool
+    {
+        return $this->account_type === AccountType::CentralAdministrator;
+    }
+
+    public function hasPermission(string $permissionKey): bool
+    {
+        return $this->permissions()->where('key', $permissionKey)->exists();
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value): string => Str::lower(trim($value)),
+        );
     }
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
+            'account_status' => AccountStatus::class,
+            'account_type' => AccountType::class,
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];

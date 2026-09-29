@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\AccountStatus;
+use App\Enums\AccountType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -12,34 +14,56 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'full_name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'phone' => fake()->optional()->numerify('###########'),
             'password' => static::$password ??= Hash::make('password'),
+            'account_type' => AccountType::Employee,
+            'account_status' => AccountStatus::Active,
+            'email_verified_at' => now(),
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn (array $attributes): array => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function pendingActivation(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'password' => null,
+            'account_status' => AccountStatus::PendingActivation,
+            'email_verified_at' => null,
+        ]);
+    }
+
+    public function disabled(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'account_status' => AccountStatus::Disabled,
+        ]);
+    }
+
+    public function guardian(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'account_type' => AccountType::Guardian,
+        ]);
+    }
+
+    public function centralAdministrator(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'account_type' => AccountType::CentralAdministrator,
         ]);
     }
 }

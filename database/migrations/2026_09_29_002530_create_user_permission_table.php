@@ -8,18 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('escola_user', function (Blueprint $table) {
-            $table->foreignId('escola_id')->constrained('escolas')->cascadeOnDelete();
+        Schema::create('user_permission', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->boolean('proprietario')->default(false);
-            $table->timestamps();
-
-            $table->primary(['escola_id', 'user_id']);
+            $table->foreignId('permission_id')->constrained()->cascadeOnDelete();
+            $table->primary(['user_id', 'permission_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('escola_user');
+        Schema::dropIfExists('user_permission');
     }
 };
