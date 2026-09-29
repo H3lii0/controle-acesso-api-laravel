@@ -46,6 +46,12 @@ class PermissionSeeder extends Seeder
                 'description' => 'Permite consultar entradas e saídas dos alunos.',
                 'category' => 'access_records',
             ],
+            [
+                'key' => 'access_records.create',
+                'name' => 'Registrar acessos',
+                'description' => 'Permite registrar entradas e saídas dos alunos.',
+                'category' => 'access_records',
+            ],
         ];
 
         foreach ($permissions as $permission) {

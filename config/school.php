@@ -2,7 +2,7 @@
 
 return [
     'name' => env('SCHOOL_NAME', 'Escola Modelo'),
-    'timezone' => env('SCHOOL_TIMEZONE', 'America/Fortaleza'),
+    'timezone' => env('SCHOOL_TIMEZONE', 'America/Recife'),
 
     'central_administrator' => [
         'name' => env('CENTRAL_ADMIN_NAME'),

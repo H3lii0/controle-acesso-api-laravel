@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\AccessRecordController;
 use App\Http\Controllers\Api\AccountActivationController;
 use App\Http\Controllers\Api\Admin\EmployeeController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\SchoolClassController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\GuardianAccessController;
 use App\Http\Controllers\Api\GuardianController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\SchoolClassOptionController;
@@ -48,6 +50,13 @@ Route::get('/school-classes/options', [SchoolClassOptionController::class, 'inde
     ->middleware(['auth:sanctum', 'active.account', 'permission:students.create']);
 
 Route::middleware(['auth:sanctum', 'active.account'])->group(function (): void {
+    Route::post('/access-records/read', [AccessRecordController::class, 'read'])
+        ->middleware('permission:access_records.create');
+    Route::get('/access-records', [AccessRecordController::class, 'index'])
+        ->middleware('permission:access_records.view');
+    Route::get('/access-records/summary', [AccessRecordController::class, 'summary'])
+        ->middleware('permission:access_records.view');
+
     Route::get('/guardians', [GuardianController::class, 'index'])
         ->middleware('permission:students.create');
     Route::put('/guardians/{guardian}', [GuardianController::class, 'update'])
@@ -66,3 +75,10 @@ Route::middleware(['auth:sanctum', 'active.account'])->group(function (): void {
     Route::patch('/students/{student}/status', [StudentController::class, 'updateStatus'])
         ->middleware('permission:students.change_status');
 });
+
+Route::prefix('guardian')
+    ->middleware(['auth:sanctum', 'active.account', 'guardian.account'])
+    ->group(function (): void {
+        Route::get('/students', [GuardianAccessController::class, 'students']);
+        Route::get('/students/{student}/access-records', [GuardianAccessController::class, 'accessRecords']);
+    });
