@@ -18,7 +18,8 @@ class ReadStudentAccessRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'enrollment_number' => ['required', 'string', 'max:30'],
+            'enrollment_number' => ['nullable', 'required_without:credential_identifier', 'string', 'max:30'],
+            'credential_identifier' => ['nullable', 'required_without:enrollment_number', 'uuid'],
         ];
     }
 
@@ -29,6 +30,7 @@ class ReadStudentAccessRequest extends FormRequest
     {
         return [
             'enrollment_number.required' => 'Informe a matrícula do aluno.',
+            'enrollment_number.required_without' => 'Informe a matrícula ou o identificador do leitor.',
             'enrollment_number.max' => 'A matrícula deve ter no máximo 30 caracteres.',
         ];
     }

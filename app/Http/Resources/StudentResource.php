@@ -20,6 +20,13 @@ class StudentResource extends JsonResource
             'is_active' => $this->is_active,
             'school_class' => new SchoolClassResource($this->whenLoaded('schoolClass')),
             'guardian' => new GuardianResource($this->whenLoaded('guardian')),
+            'biometric' => [
+                'captured' => $this->relationLoaded('biometricCredential') && $this->biometricCredential !== null,
+                'identifier' => $this->when(
+                    $this->relationLoaded('biometricCredential') && $this->biometricCredential !== null,
+                    $this->biometricCredential?->identifier,
+                ),
+            ],
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

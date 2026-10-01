@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class StudentController extends Controller
@@ -26,7 +27,7 @@ class StudentController extends Controller
 
     public function index(IndexStudentRequest $request): AnonymousResourceCollection
     {
-        $query = Student::query()->with(['schoolClass', 'guardian']);
+        $query = Student::query()->with(['schoolClass', 'guardian', 'biometricCredential']);
 
         if ($request->filled('search')) {
             $search = '%'.$request->string('search')->toString().'%';
@@ -60,7 +61,7 @@ class StudentController extends Controller
 
     public function show(Student $student): StudentResource
     {
-        return new StudentResource($student->load(['schoolClass', 'guardian']));
+        return new StudentResource($student->load(['schoolClass', 'guardian', 'biometricCredential']));
     }
 
     public function store(StoreStudentRequest $request): JsonResponse
@@ -72,10 +73,17 @@ class StudentController extends Controller
             [$guardian, $newGuardian] = $this->resolveGuardian($validated['guardian']);
 
             $student = Student::query()->create([
-                ...$validated['student'],
+                ...collect($validated['student'])->except('biometric_captured')->all(),
                 'guardian_user_id' => $guardian->id,
                 'is_active' => true,
             ]);
+
+            if ((bool) ($validated['student']['biometric_captured'] ?? false)) {
+                $student->biometricCredential()->create([
+                    'identifier' => (string) Str::uuid(),
+                    'captured_at' => now(),
+                ]);
+            }
 
             return [$student, $newGuardian];
         });
@@ -88,7 +96,7 @@ class StudentController extends Controller
             'message' => $newGuardian instanceof User
                 ? 'Aluno e responsável cadastrados. O convite de ativação foi enviado.'
                 : 'Aluno cadastrado e vinculado ao responsável existente.',
-            'data' => new StudentResource($student->load(['schoolClass', 'guardian'])),
+            'data' => new StudentResource($student->load(['schoolClass', 'guardian', 'biometricCredential'])),
         ], 201);
     }
 
@@ -104,9 +112,17 @@ class StudentController extends Controller
             [$guardian, $newGuardian] = $this->resolveGuardian($validated['guardian']);
 
             $student->update([
-                ...$validated['student'],
+                ...collect($validated['student'])->except('biometric_captured')->all(),
                 'guardian_user_id' => $guardian->id,
             ]);
+
+            if ((bool) ($validated['student']['biometric_captured'] ?? false)
+                && ! $student->biometricCredential()->exists()) {
+                $student->biometricCredential()->create([
+                    'identifier' => (string) Str::uuid(),
+                    'captured_at' => now(),
+                ]);
+            }
 
             return $newGuardian;
         });
@@ -115,7 +131,7 @@ class StudentController extends Controller
             $this->issueAccountActivation->handle($newGuardian);
         }
 
-        return (new StudentResource($student->load(['schoolClass', 'guardian'])))
+        return (new StudentResource($student->load(['schoolClass', 'guardian', 'biometricCredential'])))
             ->additional([
                 'message' => $newGuardian instanceof User
                     ? 'Aluno atualizado. O novo responsável recebeu o convite de ativação.'
@@ -129,7 +145,7 @@ class StudentController extends Controller
             'is_active' => $request->boolean('is_active'),
         ]);
 
-        return (new StudentResource($student->load(['schoolClass', 'guardian'])))
+        return (new StudentResource($student->load(['schoolClass', 'guardian', 'biometricCredential'])))
             ->additional([
                 'message' => $student->is_active
                     ? 'Aluno ativado com sucesso.'

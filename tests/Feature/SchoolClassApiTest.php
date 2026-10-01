@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Enums\SchoolShift;
 use App\Models\Permission;
 use App\Models\SchoolClass;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SchoolClassApiTest extends TestCase
@@ -85,10 +87,50 @@ class SchoolClassApiTest extends TestCase
             ->assertCreated();
     }
 
-    public function test_employee_with_student_creation_permission_can_list_only_active_class_options(): void
+    public function test_class_created_by_administrator_can_be_used_to_register_a_student(): void
+    {
+        $administrator = User::factory()->centralAdministrator()->create();
+        $guardian = User::factory()->guardian()->create();
+
+        $response = $this->actingAs($administrator)
+            ->postJson('/api/admin/school-classes', [
+                'name' => '7º Ano A',
+                'shift' => SchoolShift::Morning->value,
+            ])
+            ->assertCreated();
+
+        $schoolClassId = $response->json('data.id');
+
+        $this->actingAs($administrator)
+            ->getJson('/api/school-classes/options')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $schoolClassId);
+
+        $this->actingAs($administrator)
+            ->postJson('/api/students', [
+                'student' => [
+                    'full_name' => 'Aluno de Teste',
+                    'enrollment_number' => 'MAT-2026-001',
+                    'date_of_birth' => '2015-01-01',
+                    'school_class_id' => $schoolClassId,
+                ],
+                'guardian' => ['mode' => 'existing', 'id' => $guardian->id],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.school_class.id', $schoolClassId);
+
+        $this->assertDatabaseHas('students', [
+            'enrollment_number' => 'MAT-2026-001',
+            'school_class_id' => $schoolClassId,
+            'guardian_user_id' => $guardian->id,
+        ]);
+    }
+
+    #[DataProvider('studentOptionPermissions')]
+    public function test_employee_with_student_permission_can_list_only_active_class_options(string $permissionKey): void
     {
         $permission = Permission::factory()->create([
-            'key' => 'students.create',
+            'key' => $permissionKey,
         ]);
         $employee = User::factory()->create();
         $employee->permissions()->attach($permission);
@@ -107,6 +149,41 @@ class SchoolClassApiTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $activeClass->id);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function studentOptionPermissions(): array
+    {
+        return [
+            'view students' => ['students.view'],
+            'create students' => ['students.create'],
+            'update students' => ['students.update'],
+        ];
+    }
+
+    public function test_deactivating_class_preserves_existing_student_link_and_status(): void
+    {
+        $administrator = User::factory()->centralAdministrator()->create();
+        $schoolClass = SchoolClass::factory()->create();
+        $student = Student::factory()->create(['school_class_id' => $schoolClass->id]);
+
+        $this->actingAs($administrator)
+            ->patchJson("/api/admin/school-classes/{$schoolClass->id}/status", ['is_active' => false])
+            ->assertOk()
+            ->assertJsonPath('data.is_active', false);
+
+        $this->assertDatabaseHas('students', [
+            'id' => $student->id,
+            'school_class_id' => $schoolClass->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($administrator)
+            ->getJson('/api/school-classes/options')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 
     public function test_employee_without_permission_and_guardian_cannot_list_class_options(): void
@@ -132,6 +209,12 @@ class SchoolClassApiTest extends TestCase
         ]);
         $employee = User::factory()->create();
         $employee->permissions()->attach($permission);
+        $schoolClass = SchoolClass::factory()->create();
+
+        $this->actingAs($employee)
+            ->getJson('/api/admin/school-classes')
+            ->assertForbidden()
+            ->assertJsonPath('code', 'central_administrator_required');
 
         $this->actingAs($employee)
             ->postJson('/api/admin/school-classes', [
@@ -140,5 +223,16 @@ class SchoolClassApiTest extends TestCase
             ])
             ->assertForbidden()
             ->assertJsonPath('code', 'central_administrator_required');
+
+        $this->actingAs($employee)
+            ->putJson("/api/admin/school-classes/{$schoolClass->id}", [
+                'name' => '7º Ano B',
+                'shift' => SchoolShift::Afternoon->value,
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($employee)
+            ->patchJson("/api/admin/school-classes/{$schoolClass->id}/status", ['is_active' => false])
+            ->assertForbidden();
     }
 }

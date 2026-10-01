@@ -47,7 +47,7 @@ Route::prefix('admin')
     });
 
 Route::get('/school-classes/options', [SchoolClassOptionController::class, 'index'])
-    ->middleware(['auth:sanctum', 'active.account', 'permission:students.create']);
+    ->middleware(['auth:sanctum', 'active.account', 'permission:students.view,students.create,students.update']);
 
 Route::middleware(['auth:sanctum', 'active.account'])->group(function (): void {
     Route::post('/access-records/read', [AccessRecordController::class, 'read'])

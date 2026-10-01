@@ -10,6 +10,7 @@ use App\Http\Requests\Access\ReadStudentAccessRequest;
 use App\Http\Resources\StudentAccessRecordResource;
 use App\Models\Student;
 use App\Models\StudentAccessRecord;
+use App\Models\StudentBiometricCredential;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,9 +21,14 @@ class AccessRecordController extends Controller
 
     public function read(ReadStudentAccessRequest $request): JsonResponse
     {
-        $student = Student::query()
-            ->where('enrollment_number', $request->string('enrollment_number')->toString())
-            ->first();
+        $student = $request->filled('credential_identifier')
+            ? StudentBiometricCredential::query()
+                ->where('identifier', $request->string('credential_identifier')->toString())
+                ->with('student')
+                ->first()?->student
+            : Student::query()
+                ->where('enrollment_number', $request->string('enrollment_number')->toString())
+                ->first();
 
         if (! $student instanceof Student) {
             return response()->json([

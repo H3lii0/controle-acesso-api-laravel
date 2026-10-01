@@ -12,7 +12,7 @@ class EnsureUserHasPermission
     /**
      * @param  Closure(Request): Response  $next
      */
-    public function handle(Request $request, Closure $next, string $permission): Response
+    public function handle(Request $request, Closure $next, string $permission, string ...$alternativePermissions): Response
     {
         $user = $request->user();
 
@@ -22,14 +22,23 @@ class EnsureUserHasPermission
             ], 401);
         }
 
-        if ($user->isCentralAdministrator() || $user->hasPermission($permission)) {
+        if ($user->isCentralAdministrator()) {
             return $next($request);
+        }
+
+        $permissions = [$permission, ...$alternativePermissions];
+
+        foreach ($permissions as $permissionKey) {
+            if ($user->hasPermission($permissionKey)) {
+                return $next($request);
+            }
         }
 
         return response()->json([
             'code' => 'permission_required',
             'message' => 'Você não possui permissão para realizar esta ação.',
             'required_permission' => $permission,
+            ...($alternativePermissions !== [] ? ['required_permissions' => $permissions] : []),
         ], 403);
     }
 }

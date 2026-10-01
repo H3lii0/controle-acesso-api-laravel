@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\StudentAccessRecord;
+use App\Models\StudentBiometricCredential;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -201,6 +202,41 @@ class StudentAccessApiTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('code', 'entry_registered');
+    }
+
+    public function test_simulated_biometric_credential_is_created_once_and_registers_access(): void
+    {
+        $administrator = User::factory()->centralAdministrator()->create();
+        $student = Student::factory()->create(['enrollment_number' => 'MAT-SIMULATED-001']);
+
+        $response = $this->actingAs($administrator)
+            ->postJson('/api/students', [
+                'student' => [
+                    'enrollment_number' => 'MAT-SIMULATED-CREATE',
+                    'full_name' => 'Aluno de Teste Biométrico',
+                    'date_of_birth' => '2015-05-12',
+                    'school_class_id' => $student->school_class_id,
+                    'biometric_captured' => true,
+                ],
+                'guardian' => [
+                    'mode' => 'existing',
+                    'id' => $student->guardian_user_id,
+                ],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.biometric.captured', true);
+
+        $createdStudent = Student::query()->where('enrollment_number', 'MAT-SIMULATED-CREATE')->firstOrFail();
+        $credential = StudentBiometricCredential::query()->where('student_id', $createdStudent->id)->firstOrFail();
+
+        $this->assertSame($credential->identifier, $response->json('data.biometric.identifier'));
+        $this->assertDatabaseCount('student_biometric_credentials', 1);
+
+        $this->actingAs($administrator)
+            ->postJson('/api/access-records/read', ['credential_identifier' => $credential->identifier])
+            ->assertOk()
+            ->assertJsonPath('code', 'entry_registered')
+            ->assertJsonPath('data.student.id', $createdStudent->id);
     }
 
     /**

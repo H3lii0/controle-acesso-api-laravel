@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -37,6 +38,11 @@ class Student extends Model
     public function accessRecords(): HasMany
     {
         return $this->hasMany(StudentAccessRecord::class);
+    }
+
+    public function biometricCredential(): HasOne
+    {
+        return $this->hasOne(StudentBiometricCredential::class);
     }
 
     protected function enrollmentNumber(): Attribute
