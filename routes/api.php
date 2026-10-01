@@ -70,6 +70,8 @@ Route::middleware(['auth:sanctum', 'active.account'])->group(function (): void {
         ->middleware('permission:students.create');
     Route::get('/students/{student}', [StudentController::class, 'show'])
         ->middleware('permission:students.view');
+    Route::post('/students/{student}/biometric', [StudentController::class, 'captureBiometric'])
+        ->middleware('permission:students.update');
     Route::put('/students/{student}', [StudentController::class, 'update'])
         ->middleware('permission:students.update');
     Route::patch('/students/{student}/status', [StudentController::class, 'updateStatus'])

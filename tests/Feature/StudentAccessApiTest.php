@@ -239,6 +239,32 @@ class StudentAccessApiTest extends TestCase
             ->assertJsonPath('data.student.id', $createdStudent->id);
     }
 
+    public function test_authorized_user_can_capture_and_replace_a_students_simulated_biometric_credential(): void
+    {
+        $administrator = User::factory()->centralAdministrator()->create();
+        $student = Student::factory()->create();
+
+        $first = $this->actingAs($administrator)
+            ->postJson("/api/students/{$student->id}/biometric")
+            ->assertOk()
+            ->assertJsonPath('data.biometric.captured', true);
+
+        $firstIdentifier = $first->json('data.biometric.identifier');
+        $this->assertDatabaseCount('student_biometric_credentials', 1);
+
+        $second = $this->actingAs($administrator)
+            ->postJson("/api/students/{$student->id}/biometric")
+            ->assertOk()
+            ->assertJsonPath('data.biometric.captured', true);
+
+        $this->assertNotSame($firstIdentifier, $second->json('data.biometric.identifier'));
+        $this->assertDatabaseCount('student_biometric_credentials', 1);
+        $this->assertDatabaseHas('student_biometric_credentials', [
+            'student_id' => $student->id,
+            'identifier' => $second->json('data.biometric.identifier'),
+        ]);
+    }
+
     /**
      * @param  array<int, string>  $permissionKeys
      */

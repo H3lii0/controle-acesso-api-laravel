@@ -64,6 +64,29 @@ class StudentController extends Controller
         return new StudentResource($student->load(['schoolClass', 'guardian', 'biometricCredential']));
     }
 
+    public function captureBiometric(Student $student): StudentResource
+    {
+        DB::transaction(function () use ($student): void {
+            $lockedStudent = Student::query()->whereKey($student->id)->lockForUpdate()->firstOrFail();
+            $credential = $lockedStudent->biometricCredential()->lockForUpdate()->first();
+
+            if ($credential !== null) {
+                $credential->update([
+                    'identifier' => (string) Str::uuid(),
+                    'captured_at' => now(),
+                ]);
+            } else {
+                $lockedStudent->biometricCredential()->create([
+                    'identifier' => (string) Str::uuid(),
+                    'captured_at' => now(),
+                ]);
+            }
+        });
+
+        return (new StudentResource($student->load(['schoolClass', 'guardian', 'biometricCredential'])))
+            ->additional(['message' => 'Captura biométrica simulada atualizada com sucesso.']);
+    }
+
     public function store(StoreStudentRequest $request): JsonResponse
     {
         $validated = $request->validated();
