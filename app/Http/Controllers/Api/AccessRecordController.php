@@ -11,6 +11,7 @@ use App\Http\Resources\StudentAccessRecordResource;
 use App\Models\Student;
 use App\Models\StudentAccessRecord;
 use App\Models\StudentBiometricCredential;
+use App\Models\SchoolClass;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -75,6 +76,12 @@ class AccessRecordController extends Controller
         return response()->json([
             'data' => [
                 'date' => $this->requestedDate($request),
+                'date_from' => $this->requestedDate($request),
+                'date_to' => $this->requestedEndDate($request),
+                'classes' => SchoolClass::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'shift']),
                 'entries' => (clone $query)->count(),
                 'exits' => (clone $query)->whereNotNull('exited_at')->count(),
                 'inside' => (clone $query)->whereNull('exited_at')->count(),
@@ -86,7 +93,8 @@ class AccessRecordController extends Controller
     private function filteredQuery(IndexAccessRecordRequest $request): Builder
     {
         $query = StudentAccessRecord::query()
-            ->whereDate('access_date', $this->requestedDate($request));
+            ->whereDate('access_date', '>=', $this->requestedDate($request))
+            ->whereDate('access_date', '<=', $this->requestedEndDate($request));
 
         if ($request->filled('search')) {
             $search = '%'.$request->string('search')->toString().'%';
@@ -117,9 +125,12 @@ class AccessRecordController extends Controller
 
     private function requestedDate(IndexAccessRecordRequest $request): string
     {
-        return $request->filled('date')
-            ? $request->string('date')->toString()
-            : now(config('school.timezone'))->toDateString();
+        return $request->string('date_from')->toString();
+    }
+
+    private function requestedEndDate(IndexAccessRecordRequest $request): string
+    {
+        return $request->string('date_to')->toString();
     }
 
     private function messageFor(AccessReadingResult $result): string

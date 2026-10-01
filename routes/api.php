@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\SchoolClassController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GuardianAccessController;
 use App\Http\Controllers\Api\GuardianController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\SchoolClassOptionController;
 use App\Http\Controllers\Api\StudentController;
@@ -50,6 +51,9 @@ Route::get('/school-classes/options', [SchoolClassOptionController::class, 'inde
     ->middleware(['auth:sanctum', 'active.account', 'permission:students.view,students.create,students.update']);
 
 Route::middleware(['auth:sanctum', 'active.account'])->group(function (): void {
+    Route::get('/dashboard/summary', [DashboardController::class, 'summary'])
+        ->middleware('permission:dashboard.view');
+
     Route::post('/access-records/read', [AccessRecordController::class, 'read'])
         ->middleware('permission:access_records.create');
     Route::get('/access-records', [AccessRecordController::class, 'index'])
