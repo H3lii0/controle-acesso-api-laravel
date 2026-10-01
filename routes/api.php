@@ -5,11 +5,13 @@ use App\Http\Controllers\Api\AccountActivationController;
 use App\Http\Controllers\Api\Admin\EmployeeController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\SchoolClassController;
+use App\Http\Controllers\Api\Admin\SchoolSettingController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GuardianAccessController;
 use App\Http\Controllers\Api\GuardianController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SchoolClassOptionController;
 use App\Http\Controllers\Api\StudentController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +30,7 @@ Route::post('/auth/reset-password', [PasswordResetController::class, 'reset']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::put('/auth/profile', [ProfileController::class, 'update'])->middleware('active.account');
     Route::get('/auth/me', [AuthController::class, 'me'])->middleware('active.account');
 });
 
@@ -45,6 +48,8 @@ Route::prefix('admin')
         Route::post('/school-classes', [SchoolClassController::class, 'store']);
         Route::put('/school-classes/{schoolClass}', [SchoolClassController::class, 'update']);
         Route::patch('/school-classes/{schoolClass}/status', [SchoolClassController::class, 'updateStatus']);
+        Route::get('/settings/school', [SchoolSettingController::class, 'show']);
+        Route::put('/settings/school', [SchoolSettingController::class, 'update']);
     });
 
 Route::get('/school-classes/options', [SchoolClassOptionController::class, 'index'])
