@@ -17,7 +17,7 @@ class IndexGuardianRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'search' => ['required', 'string', 'min:2', 'max:100'],
+            'search' => ['nullable', 'string', 'min:2', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
         ];
     }
@@ -28,7 +28,6 @@ class IndexGuardianRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'search.required' => 'Informe pelo menos parte do nome ou e-mail do responsável.',
             'search.min' => 'A busca deve ter pelo menos 2 caracteres.',
             'search.max' => 'A busca deve ter no máximo 100 caracteres.',
             'per_page.integer' => 'A quantidade por página deve ser um número inteiro.',

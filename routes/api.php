@@ -59,6 +59,10 @@ Route::middleware(['auth:sanctum', 'active.account'])->group(function (): void {
 
     Route::get('/guardians', [GuardianController::class, 'index'])
         ->middleware('permission:students.create');
+    Route::post('/guardians', [GuardianController::class, 'store'])
+        ->middleware('permission:students.create');
+    Route::get('/guardians/{guardian}', [GuardianController::class, 'show'])
+        ->middleware('permission:students.create');
     Route::put('/guardians/{guardian}', [GuardianController::class, 'update'])
         ->middleware('permission:students.update');
     Route::post('/guardians/{guardian}/resend-invitation', [GuardianController::class, 'resendInvitation'])

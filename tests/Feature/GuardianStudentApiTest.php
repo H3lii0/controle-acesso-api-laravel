@@ -18,6 +18,31 @@ class GuardianStudentApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_authorized_employee_can_create_guardian_without_student(): void
+    {
+        Notification::fake();
+
+        $employee = $this->employeeWithPermissions(['students.create']);
+
+        $response = $this->actingAs($employee)
+            ->postJson('/api/guardians', [
+                'full_name' => 'Responsável Independente',
+                'email' => 'independente@example.test',
+                'phone' => '85988887777',
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.full_name', 'Responsável Independente')
+            ->assertJsonPath('data.email', 'independente@example.test')
+            ->assertJsonPath('data.students_count', 0);
+
+        $guardian = User::query()->where('email', 'independente@example.test')->firstOrFail();
+        $this->assertSame(AccountType::Guardian, $guardian->account_type);
+        $this->assertSame(AccountStatus::PendingActivation, $guardian->account_status);
+        $this->assertNull($guardian->password);
+        Notification::assertSentTo($guardian, AccountActivationNotification::class);
+    }
+
     public function test_authorized_employee_can_create_student_with_new_guardian(): void
     {
         Notification::fake();

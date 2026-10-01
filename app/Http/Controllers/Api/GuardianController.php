@@ -7,12 +7,14 @@ use App\Enums\AccountStatus;
 use App\Enums\AccountType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Guardian\IndexGuardianRequest;
+use App\Http\Requests\Guardian\StoreGuardianRequest;
 use App\Http\Requests\Guardian\UpdateGuardianRequest;
 use App\Http\Resources\GuardianResource;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class GuardianController extends Controller
 {
@@ -25,10 +27,12 @@ class GuardianController extends Controller
         return GuardianResource::collection(
             User::query()
                 ->where('account_type', AccountType::Guardian)
-                ->where(function (Builder $query) use ($search): void {
-                    $query
-                        ->whereLike('full_name', $search, caseSensitive: false)
-                        ->orWhereLike('email', $search, caseSensitive: false);
+                ->when($request->filled('search'), function (Builder $query) use ($search): void {
+                    $query->where(function (Builder $searchQuery) use ($search): void {
+                        $searchQuery
+                            ->whereLike('full_name', $search, caseSensitive: false)
+                            ->orWhereLike('email', $search, caseSensitive: false);
+                    });
                 })
                 ->withCount('guardedStudents')
                 ->orderBy('full_name')
@@ -36,6 +40,38 @@ class GuardianController extends Controller
                 ->withQueryString(),
         );
     }
+
+    public function store(StoreGuardianRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $guardian = DB::transaction(fn (): User => User::query()->create([
+            'full_name' => $validated['full_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'password' => null,
+            'account_type' => AccountType::Guardian,
+            'account_status' => AccountStatus::PendingActivation,
+            'email_verified_at' => null,
+        ]));
+
+        $this->issueAccountActivation->handle($guardian);
+
+        return response()->json([
+            'message' => 'Responsável cadastrado. O convite de ativação foi enviado.',
+            'data' => new GuardianResource($guardian->loadCount('guardedStudents')),
+        ], 201);
+    }
+
+    public function show(User $guardian): GuardianResource|JsonResponse
+    {
+        if (! $this->isGuardian($guardian)) {
+            return $this->guardianNotFoundResponse();
+        }
+
+        return new GuardianResource($guardian->load(['guardedStudents.schoolClass'])->loadCount('guardedStudents'));
+    }
+
 
     public function update(UpdateGuardianRequest $request, User $guardian): GuardianResource|JsonResponse
     {
