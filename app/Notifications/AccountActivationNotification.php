@@ -35,6 +35,7 @@ class AccountActivationNotification extends Notification
 
         return (new MailMessage)
             ->subject('Ative seu acesso - '.config('school.name'))
+            ->action('Criar minha senha', $activationUrl)
             ->view('emails.account-activation', [
                 'recipientName' => $notifiable->full_name,
                 'activationUrl' => $activationUrl,
