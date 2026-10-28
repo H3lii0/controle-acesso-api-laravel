@@ -84,7 +84,7 @@ class StudentController extends Controller
         });
 
         return (new StudentResource($student->load(['schoolClass', 'guardian', 'biometricCredential'])))
-            ->additional(['message' => 'Captura biométrica simulada atualizada com sucesso.']);
+            ->additional(['message' => 'Captura biométrica atualizada com sucesso.']);
     }
 
     public function store(StoreStudentRequest $request): JsonResponse

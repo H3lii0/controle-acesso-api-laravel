@@ -30,7 +30,7 @@ class UpdateGuardianRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($guardian instanceof User ? $guardian->id : $guardian),
             ],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'digits_between:10,11'],
         ];
     }
 
@@ -51,7 +51,7 @@ class UpdateGuardianRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $phone = trim((string) $this->input('phone'));
+        $phone = preg_replace('/\D+/', '', trim((string) $this->input('phone'))) ?? '';
 
         $this->merge([
             'full_name' => trim((string) $this->input('full_name')),

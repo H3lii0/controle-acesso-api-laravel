@@ -35,12 +35,12 @@ class AccountActivationNotification extends Notification
 
         return (new MailMessage)
             ->subject('Ative seu acesso - '.config('school.name'))
-            ->greeting('Olá, '.$notifiable->full_name.'!')
-            ->line('Seu acesso ao sistema de controle escolar foi criado.')
-            ->line('Use o botão abaixo para criar sua senha e ativar a conta.')
-            ->action('Criar minha senha', $activationUrl)
-            ->line('Este convite expira em '.$formattedExpiration.'.')
-            ->line('Se você não esperava este convite, desconsidere esta mensagem.');
+            ->view('emails.account-activation', [
+                'recipientName' => $notifiable->full_name,
+                'activationUrl' => $activationUrl,
+                'expiration' => $formattedExpiration,
+                'schoolName' => config('school.name'),
+            ]);
     }
 
     /**

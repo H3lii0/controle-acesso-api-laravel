@@ -30,7 +30,7 @@ class StoreStudentRequest extends FormRequest
             'guardian.id' => ['nullable', 'required_if:guardian.mode,existing', 'integer', Rule::exists('users', 'id')],
             'guardian.full_name' => ['nullable', 'required_if:guardian.mode,new', 'string', 'max:150'],
             'guardian.email' => ['nullable', 'required_if:guardian.mode,new', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'guardian.phone' => ['nullable', 'string', 'max:20'],
+            'guardian.phone' => ['nullable', 'string', 'digits_between:10,11'],
         ];
     }
 
@@ -73,7 +73,7 @@ class StoreStudentRequest extends FormRequest
         }
 
         if (array_key_exists('phone', $guardian)) {
-            $phone = trim((string) $guardian['phone']);
+            $phone = preg_replace('/\D+/', '', trim((string) $guardian['phone'])) ?? '';
             $guardian['phone'] = $phone !== '' ? $phone : null;
         }
     }
@@ -106,7 +106,7 @@ class StoreStudentRequest extends FormRequest
             'guardian.email.required_if' => 'Informe o e-mail do responsável.',
             'guardian.email.email' => 'Informe um e-mail válido para o responsável.',
             'guardian.email.unique' => 'Já existe uma conta com este e-mail. Selecione o responsável existente.',
-            'guardian.phone.max' => 'O telefone deve ter no máximo 20 caracteres.',
+            'guardian.phone.digits_between' => 'Informe um telefone válido com DDD.',
         ];
     }
 }

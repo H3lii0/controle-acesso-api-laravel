@@ -12,7 +12,7 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'full_name' => ['required', 'string', 'max:150'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'digits_between:10,11'],
         ];
     }
 
@@ -20,7 +20,7 @@ class UpdateProfileRequest extends FormRequest
     {
         $this->merge([
             'full_name' => trim((string) $this->input('full_name')),
-            'phone' => trim((string) $this->input('phone')) ?: null,
+            'phone' => preg_replace('/\D+/', '', trim((string) $this->input('phone'))) ?: null,
         ]);
     }
 }

@@ -40,7 +40,7 @@ class DashboardController extends Controller
             'denied' => null,
             'flow' => $this->flowFor($recordsQuery, $timezone),
             'recent_events' => $events,
-            'terminals' => [['name' => 'Terminal simulado', 'status' => 'online', 'last_sync_at' => now($timezone)->toIso8601String()]],
+            'terminals' => [['name' => 'Terminal de acesso', 'status' => 'online', 'last_sync_at' => now($timezone)->toIso8601String()]],
         ]]);
     }
 
