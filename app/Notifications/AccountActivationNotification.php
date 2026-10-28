@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\AccountType;
 use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -28,6 +29,9 @@ class AccountActivationNotification extends Notification
     {
         $activationUrl = rtrim((string) config('app.frontend_url'), '/')
             .'/ativar-conta?token='.rawurlencode($this->token);
+        if ($notifiable->account_type === AccountType::Guardian) {
+            $activationUrl .= '&portal=responsavel';
+        }
         $formattedExpiration = $this->expiresAt
             ->copy()
             ->setTimezone((string) config('school.timezone'))
