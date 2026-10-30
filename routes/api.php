@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\SchoolClassController;
 use App\Http\Controllers\Api\Admin\SchoolSettingController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GuardianAccessController;
+use App\Http\Controllers\Api\GuardianNotificationController;
 use App\Http\Controllers\Api\GuardianController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -96,4 +97,8 @@ Route::prefix('guardian')
     ->group(function (): void {
         Route::get('/students', [GuardianAccessController::class, 'students']);
         Route::get('/students/{student}/access-records', [GuardianAccessController::class, 'accessRecords']);
+        Route::get('/notifications', [GuardianNotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [GuardianNotificationController::class, 'unreadCount']);
+        Route::patch('/notifications/{notification}/read', [GuardianNotificationController::class, 'markAsRead']);
+        Route::patch('/notifications/read-all', [GuardianNotificationController::class, 'markAllAsRead']);
     });

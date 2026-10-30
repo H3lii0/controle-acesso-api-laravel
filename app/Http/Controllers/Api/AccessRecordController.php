@@ -12,6 +12,7 @@ use App\Models\Student;
 use App\Models\StudentAccessRecord;
 use App\Models\StudentBiometricCredential;
 use App\Models\SchoolClass;
+use App\Notifications\StudentAccessNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -46,8 +47,13 @@ class AccessRecordController extends Controller
         }
 
         $reading = $this->registerStudentAccess->handle($student);
-        $record = $reading['record']->load('student.schoolClass');
+        $record = $reading['record']->load('student.schoolClass', 'student.guardian');
         $result = $reading['result'];
+
+        if (in_array($result, [AccessReadingResult::EntryRegistered, AccessReadingResult::ExitRegistered], true)
+            && $record->student->guardian !== null) {
+            $record->student->guardian->notify(new StudentAccessNotification($record, $result));
+        }
 
         return response()->json([
             'code' => $result->value,
