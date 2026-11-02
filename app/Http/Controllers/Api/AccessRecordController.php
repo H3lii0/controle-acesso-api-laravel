@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\RegisterStudentAccess;
 use App\Enums\AccessReadingResult;
+use App\Enums\AccessDenialReason;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Access\IndexAccessRecordRequest;
 use App\Http\Requests\Access\ReadStudentAccessRequest;
 use App\Http\Resources\StudentAccessRecordResource;
 use App\Models\Student;
+use App\Models\AccessDeniedAttempt;
 use App\Models\StudentAccessRecord;
 use App\Models\StudentBiometricCredential;
 use App\Models\SchoolClass;
@@ -33,6 +35,8 @@ class AccessRecordController extends Controller
                 ->first();
 
         if (! $student instanceof Student) {
+            $this->recordDeniedAttempt(null, AccessDenialReason::StudentNotFound, $request->inputIdentifier());
+
             return response()->json([
                 'code' => 'student_not_found',
                 'message' => 'Aluno não encontrado para a matrícula informada.',
@@ -40,6 +44,8 @@ class AccessRecordController extends Controller
         }
 
         if (! $student->is_active) {
+            $this->recordDeniedAttempt($student, AccessDenialReason::StudentInactive, $request->inputIdentifier());
+
             return response()->json([
                 'code' => 'student_inactive',
                 'message' => 'O aluno está inativo e não pode registrar acesso.',
@@ -49,6 +55,14 @@ class AccessRecordController extends Controller
         $reading = $this->registerStudentAccess->handle($student);
         $record = $reading['record']->load('student.schoolClass', 'student.guardian');
         $result = $reading['result'];
+
+        if ($result === AccessReadingResult::ExitTooSoon) {
+            $this->recordDeniedAttempt($student, AccessDenialReason::ExitTooSoon, $request->inputIdentifier());
+        }
+
+        if ($result === AccessReadingResult::DailyAccessCompleted) {
+            $this->recordDeniedAttempt($student, AccessDenialReason::DailyAccessCompleted, $request->inputIdentifier());
+        }
 
         if (in_array($result, [AccessReadingResult::EntryRegistered, AccessReadingResult::ExitRegistered], true)
             && $record->student->guardian !== null) {
@@ -157,5 +171,15 @@ class AccessRecordController extends Controller
             AccessReadingResult::ExitTooSoon,
             AccessReadingResult::DailyAccessCompleted => 409,
         };
+    }
+
+    private function recordDeniedAttempt(?Student $student, AccessDenialReason $reason, ?string $identifier): void
+    {
+        AccessDeniedAttempt::query()->create([
+            'student_id' => $student?->id,
+            'reason' => $reason,
+            'identifier' => $identifier,
+            'attempted_at' => now(),
+        ]);
     }
 }

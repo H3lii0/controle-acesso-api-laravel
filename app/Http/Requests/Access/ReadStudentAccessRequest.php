@@ -43,4 +43,9 @@ class ReadStudentAccessRequest extends FormRequest
             ]);
         }
     }
+
+    public function inputIdentifier(): ?string
+    {
+        return $this->input('credential_identifier') ?? $this->input('enrollment_number');
+    }
 }

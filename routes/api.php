@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Admin\SchoolSettingController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GuardianAccessController;
 use App\Http\Controllers\Api\GuardianNotificationController;
+use App\Http\Controllers\Api\AdminAlertController;
 use App\Http\Controllers\Api\GuardianController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -51,6 +52,7 @@ Route::prefix('admin')
         Route::patch('/school-classes/{schoolClass}/status', [SchoolClassController::class, 'updateStatus']);
         Route::get('/settings/school', [SchoolSettingController::class, 'show']);
         Route::put('/settings/school', [SchoolSettingController::class, 'update']);
+        Route::get('/alerts', [AdminAlertController::class, 'index']);
     });
 
 Route::get('/school-classes/options', [SchoolClassOptionController::class, 'index'])

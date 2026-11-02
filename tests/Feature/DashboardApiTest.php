@@ -45,6 +45,13 @@ class DashboardApiTest extends TestCase
         ]);
 
         $this->actingAs($administrator)
+            ->postJson('/api/access-records/read', [
+                'enrollment_number' => $completedStudent->enrollment_number,
+            ])
+            ->assertConflict()
+            ->assertJsonPath('code', 'daily_access_completed');
+
+        $this->actingAs($administrator)
             ->getJson("/api/dashboard/summary?date=2026-10-01&school_class_id={$morningClass->id}")
             ->assertOk()
             ->assertJsonPath('data.students.total', 2)
@@ -54,7 +61,7 @@ class DashboardApiTest extends TestCase
             ->assertJsonPath('data.accesses.entries', 2)
             ->assertJsonPath('data.accesses.exits', 1)
             ->assertJsonPath('data.delays', null)
-            ->assertJsonPath('data.denied', null)
+            ->assertJsonPath('data.denied', 1)
             ->assertJsonPath('data.flow.4.entries', 2)
             ->assertJsonPath('data.flow.9.exits', 1)
             ->assertJsonPath('data.recent_events.0.movement', 'Saída');

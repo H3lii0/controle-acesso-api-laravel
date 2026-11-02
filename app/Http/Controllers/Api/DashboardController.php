@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\DashboardSummaryRequest;
 use App\Models\Student;
 use App\Models\StudentAccessRecord;
+use App\Models\AccessDeniedAttempt;
 use App\Models\SchoolClass;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,6 +29,7 @@ class DashboardController extends Controller
         $exits = (clone $recordsQuery)->whereNotNull('exited_at')->count();
         $inside = $todayRecords->whereNull('exited_at')->count();
         $totalStudents = (clone $studentsQuery)->count();
+        $denied = $this->deniedAttemptsQuery($request, $from, $date)->count();
 
         return response()->json(['data' => [
             'date' => $date->toDateString(),
@@ -37,7 +39,7 @@ class DashboardController extends Controller
             'students' => ['total' => $totalStudents, 'inside' => $inside, 'without_access' => max(0, $totalStudents - $todayRecords->pluck('student_id')->unique()->count())],
             'accesses' => ['readings' => $entries + $exits, 'entries' => $entries, 'exits' => $exits, 'inside' => $inside],
             'delays' => null,
-            'denied' => null,
+            'denied' => $denied,
             'flow' => $this->flowFor($recordsQuery, $timezone),
             'recent_events' => $events,
             'terminals' => [['name' => 'Terminal de acesso', 'status' => 'online', 'last_sync_at' => now($timezone)->toIso8601String()]],
@@ -59,6 +61,26 @@ class DashboardController extends Controller
             ->whereDate('access_date', '<=', $to->toDateString());
         if ($request->filled('school_class_id')) $query->whereHas('student', fn (Builder $studentQuery) => $studentQuery->where('school_class_id', $request->integer('school_class_id')));
         if ($request->filled('shift')) $query->whereHas('student.schoolClass', fn (Builder $classQuery) => $classQuery->where('shift', $request->input('shift')));
+        return $query;
+    }
+
+    /** @return Builder<AccessDeniedAttempt> */
+    private function deniedAttemptsQuery(DashboardSummaryRequest $request, CarbonImmutable $from, CarbonImmutable $to): Builder
+    {
+        $query = AccessDeniedAttempt::query()
+            ->whereBetween('attempted_at', [
+                $from->startOfDay()->utc(),
+                $to->endOfDay()->utc(),
+            ]);
+
+        if ($request->filled('school_class_id')) {
+            $query->whereHas('student', fn (Builder $studentQuery) => $studentQuery->where('school_class_id', $request->integer('school_class_id')));
+        }
+
+        if ($request->filled('shift')) {
+            $query->whereHas('student.schoolClass', fn (Builder $classQuery) => $classQuery->where('shift', $request->input('shift')));
+        }
+
         return $query;
     }
 
